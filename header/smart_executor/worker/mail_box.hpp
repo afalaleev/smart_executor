@@ -13,22 +13,23 @@ namespace smart_executor {
             using storage_type=std::forward_list<T>;
 
             T get(bool sync = false) {
-                sync_(sync);
+                synchronize(sync);
                 T tmp = std::move(local().front());
                 local().pop_front();
                 return tmp;
             }
 
             bool empty(bool sync = false) {
-                sync_(sync);
+                synchronize(sync);
                 return local().empty();
 
             }
 
             void put(T &&element) {
                 {
-                    std::unique_lock<std::mutex>(this->mtx);
+                    std::lock_guard<std::mutex>(this->mtx);
                     in.push_front(std::move(element));
+                    cv.notify_one();
                 }
             }
 
@@ -38,15 +39,16 @@ namespace smart_executor {
                 return out;
             }
 
-            void sync_(bool sync) {
+            void synchronize(bool sync) {
                 if (sync) {
 
                     {
-                        std::unique_lock<std::mutex>(this->mtx);
+                        std::lock_guard<std::mutex>(this->mtx);
                         for (auto &&i:in) {
                             out.emplace_front(std::move(i));
                         }
                         in.clear();
+                        cv.notify_one();
                     }
 
                 }
