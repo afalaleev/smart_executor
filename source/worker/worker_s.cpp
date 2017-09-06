@@ -25,7 +25,7 @@ namespace smart_executor {
             return subtype_t::work;
         };
 
-        worker_s::worker_s(coordinator::abstract_coordinator *coordinator_) : coordinator_(coordinator_) {
+        worker_s::worker_s(coordinator::abstract_coordinator *coordinator_) : coordinator_(coordinator_), execution_device_(nullptr) {
             assert(this->coordinator_ != nullptr);
         }
     }
