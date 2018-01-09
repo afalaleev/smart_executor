@@ -12,17 +12,19 @@ namespace smart_executor {
         public:
             using storage_type=std::forward_list<T>;
 
-            T get(bool sync = false) {
-                synchronize(sync);
-                T tmp = std::move(local().front());
-                local().pop_front();
-                return tmp;
-            }
-
-            bool empty(bool sync = false) {
-                synchronize(sync);
-                return local().empty();
-
+            storage_type get(size_t max_throughput) {
+                storage_type out;
+                {
+                    std::lock_guard<std::mutex>(this->mtx);
+                    for (size_t i = 0; i < max_throughput; ++i) {
+                        if (in.empty()) {
+                            break;
+                        }
+                        out.emplace_front(std::move(in.front()));
+                        in.pop_front();
+                    }
+                }
+                return out;
             }
 
             void put(T &&element) {
@@ -35,32 +37,11 @@ namespace smart_executor {
 
         private:
 
-            storage_type &local() {
-                return out;
-            }
-
-            void synchronize(bool sync) {
-                if (sync) {
-
-                    {
-                        std::lock_guard<std::mutex>(this->mtx);
-                        for (auto &&i:in) {
-                            out.emplace_front(std::move(i));
-                        }
-                        in.clear();
-                        cv.notify_one();
-                    }
-
-                }
-            }
-
             /**--------------------------*/
             std::mutex mtx;
             std::condition_variable cv;
             /**--------------------------*/
             storage_type in;
-            storage_type out;
-
         };
     }
 }

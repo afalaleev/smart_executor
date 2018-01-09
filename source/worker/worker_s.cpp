@@ -7,18 +7,17 @@ namespace smart_executor {
                 execution_device_ = e;
             }
 
-            for (size_t handled_msgs = 0; handled_msgs < max_throughput;) {
-
-                if (msg_queue.empty(true)) {
-                    return resume_result::awaiting;
-                }
-                auto task = std::move(msg_queue.get());
+            size_t handled_msgs = 0;
+            auto task_list = msg_queue.get(max_throughput);
+            for (auto& task: task_list) {
                 task();
                 ++handled_msgs;
             }
 
-            return resume_result::resume;
-
+            if (handled_msgs < max_throughput) {
+                return resume_result::awaiting;
+            }
+            return resume_result::done;
         };
 
         resumable::subtype_t worker_s::subtype() const {

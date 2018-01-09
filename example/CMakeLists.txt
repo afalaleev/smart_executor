@@ -13,7 +13,10 @@ set(SOURCE_FILES
 
 set(CMAKE_CXX_STANDARD 11)
 
+find_package(Threads REQUIRED)
+
 target_link_libraries(../)
 
+
 add_executable(${project} ${SOURCE_FILES})
-target_link_libraries(${project} smart_executor)
+target_link_libraries(${project} smart_executor ${CMAKE_THREAD_LIBS_INIT})
